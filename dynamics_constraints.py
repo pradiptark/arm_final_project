@@ -40,7 +40,7 @@ def CollocationConstraintEvaluator(planar_arm, context, dt, x_i, u_i, x_ip1, u_i
 
   return h_i
 
-def AddCollocationConstraints(prog, planar_arm, context, N, x, u, timesteps):
+def AddCollocationConstraints(prog, planar_arm, context, N, x, u, tf):
   n_u = planar_arm.num_actuators()
   n_x = planar_arm.num_positions() + planar_arm.num_velocities()
   
@@ -49,13 +49,14 @@ def AddCollocationConstraints(prog, planar_arm, context, N, x, u, timesteps):
       x_i = vars[:n_x]
       u_i = vars[n_x:n_x + n_u]
       x_ip1 = vars[n_x + n_u: 2*n_x + n_u]
-      u_ip1 = vars[-n_u:]
-      return CollocationConstraintEvaluator(planar_arm, context, timesteps[i+1] - timesteps[i], x_i, u_i, x_ip1, u_ip1)
+      u_ip1 = vars[-n_u-1:-1]
+      tf = vars[-1]
+      return CollocationConstraintEvaluator(planar_arm, context, tf/N, x_i, u_i, x_ip1, u_ip1)
       
     # TODO: Within this loop add the dynamics constraints for segment i (aka collocation constraints)
     #       to prog
     # Hint: use prog.AddConstraint(CollocationConstraintHelper, lb, ub, vars)
-    v = np.hstack((x[i], u[i], x[i+1], u[i+1]))
+    v = np.hstack((x[i], u[i], x[i+1], u[i+1], tf))
     # lb = -0.001*np.ones(n_x)
     # ub = 0.001*np.ones(n_x)
     lb = np.zeros(n_x)

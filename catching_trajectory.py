@@ -22,7 +22,7 @@ AddCollocationConstraints,
     EvaluateDynamics
 )
 
-def find_throwing_trajectory(N, initial_state, final_configuration, distance, tf):
+def find_throwing_trajectory(N, q0_ball, v0_ball, initial_state, final_configuration, distance):
     '''
     Parameters:
         N - number of knot points
@@ -72,10 +72,11 @@ def find_throwing_trajectory(N, initial_state, final_configuration, distance, tf
         u[i] = prog.NewContinuousVariables(n_u, "u_" + str(i))
 
     # t_catch = prog.NewContinuousVariables(1, "t_catch")
+    tf = prog.NewContinuousVariables(1, "t_catch")
     t_catch = tf
 
     t0 = 0.0
-    timesteps = np.linspace(t0, tf, N)
+    timesteps = np.linspace(0, 1, N) * tf
     x0 = x[0]
 
     xf = x[-1]
@@ -85,19 +86,21 @@ def find_throwing_trajectory(N, initial_state, final_configuration, distance, tf
     # Add the kinematic constraints (initial state, final state)
     # TODO: Add constraints on the initial state
     prog.AddLinearEqualityConstraint(x[0], initial_state)
+    prog.AddBoundingBoxConstraint([0], [np.inf], tf)
 
     # Add the kinematic constraint on the final state
-    AddFinalLandingPositionConstraint(prog, xf, distance, t_catch, plant)
+    AddFinalLandingPositionConstraint(prog, q0_ball, v0_ball, xf, distance, t_catch, plant)
 
     # Add the collocation aka dynamics constraints
-    AddCollocationConstraints(prog, planar_arm, context, N, x, u, timesteps)
+    AddCollocationConstraints(prog, planar_arm, context, N, x, u, tf)
 
     # TODO: Add the cost function here
     cost = 0
     dt = tf/N
     for i in range(N-2):
-        cost += dt/2 * (u[i].T @ u[i] + u[i+1].T @ u[i+1])
-    prog.AddQuadraticCost(cost)
+        cost += (u[i].T @ u[i] + u[i+1].T @ u[i+1])
+    # prog.AddQuadraticCost(cost)
+    prog.AddQuadraticCost(tf[0])
     # print("cost = ", cost)
 
     # TODO: Add bounding box constraints on the inputs and qdot 
@@ -129,6 +132,7 @@ def find_throwing_trajectory(N, initial_state, final_configuration, distance, tf
 
     prog.SetInitialGuess(x, x_init_guess)
     prog.SetInitialGuess(u, u_init_guess)
+    prog.SetInitialGuess(tf, [0.5])
 
     #DO NOT MODIFY THE LINES BELOW
 
@@ -150,11 +154,13 @@ def find_throwing_trajectory(N, initial_state, final_configuration, distance, tf
     xdot_sol = np.zeros(x_sol.shape)
     for i in range(N):
         xdot_sol[i] = EvaluateDynamics(plant, plant_context, x_sol[i], u_sol[i])
-    
+
+    timesteps = np.linspace(0, t_catch_sol, N)
+    print(timesteps)
     x_traj = PiecewisePolynomial.CubicHermite(timesteps, x_sol.T, xdot_sol.T)
     u_traj = PiecewisePolynomial.ZeroOrderHold(timesteps, u_sol.T)
 
-    return x_traj, u_traj, prog, prog.GetInitialGuess(x), prog.GetInitialGuess(u)
+    return x_traj, u_traj, t_catch_sol, prog, prog.GetInitialGuess(x), prog.GetInitialGuess(u)
     
 if __name__ == '__main__':
     N = 5

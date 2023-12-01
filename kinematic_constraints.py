@@ -6,7 +6,7 @@ def cos(theta):
 def sin(theta):
     return AutoDiffXd.sin(theta)
 
-def AddFinalLandingPositionConstraint(prog, xf, d, t_catch, plant):
+def AddFinalLandingPositionConstraint(prog, q0_ball, v0_ball, xf, d, t_catch, plant):
     '''
     Impose a constraint such that if the ball is released at final state xf, 
     it will land a distance d from the base of the robot 
@@ -26,8 +26,12 @@ def AddFinalLandingPositionConstraint(prog, xf, d, t_catch, plant):
     # 2. calc final ee pos from (1) using FK using q as vars
     # 3. set final q position as constraints
 
-    def EndEffectorFinalPosHelper(xf):
-        return EndEffectorFinalPos(plant_autodiff, context, xf)
+    def EndEffectorFinalPosHelper(vars):
+        tf = vars[0]
+        xf = vars[1:]
+        # print('ee pos', EndEffectorFinalPos(plant_autodiff, context, xf))
+        # print('ball pos', CalcCatchPos(q0_ball, v0_ball, tf))
+        return EndEffectorFinalPos(plant_autodiff, context, xf) - CalcCatchPos(q0_ball, v0_ball, tf)
 
     def CalcCatchPos(q0, v0, t_catch):
         y_final = q0[1] + v0[1] * t_catch
@@ -35,16 +39,13 @@ def AddFinalLandingPositionConstraint(prog, xf, d, t_catch, plant):
         z_final = q0[2] + v0[2] * t_catch - 0.5 * g * t_catch**2
         return np.array([x_final, y_final, z_final])    
 
-    q0_ball = np.array([0, 0, 3])
-    v0_ball = np.array([0, 0, 0])
-
     # lb = np.zeros(3)
     # ub = np.zeros(3)
 
-    lb = CalcCatchPos(q0_ball, v0_ball, t_catch)
-    ub = CalcCatchPos(q0_ball, v0_ball, t_catch)
+    lb = np.zeros(3) # CalcCatchPos(q0_ball, v0_ball, t_catch)
+    ub = np.zeros(3) # CalcCatchPos(q0_ball, v0_ball, t_catch)
 
-    prog.AddConstraint(EndEffectorFinalPosHelper, lb, ub, xf)
+    prog.AddConstraint(EndEffectorFinalPosHelper, lb, ub, [*t_catch, *xf])
 
 
 def EndEffectorFinalPos(plant, context, xf):
