@@ -57,11 +57,18 @@ def find_throwing_trajectory(N, q0_ball, v0_ball, initial_state, final_configura
 
     # Store the actuator limits here
     effort_limits = np.zeros(n_u)
+    angle_lower_limits = np.zeros(n_q)
+    angle_upper_limits = np.zeros(n_q)
+    vel_limits = np.zeros(n_v)
     for act_idx in range(n_u):
-        effort_limits[act_idx] = \
-        planar_arm.get_joint_actuator(JointActuatorIndex(act_idx)).effort_limit()
-    joint_limits = np.pi * np.ones(n_q)
-    vel_limits = 15 * np.ones(n_v)
+        joint = planar_arm.get_joint_actuator(JointActuatorIndex(act_idx))
+        effort_limits[act_idx] = joint.effort_limit()
+        angle_lower_limits[act_idx] = joint.joint().position_lower_limits()[0]
+        angle_upper_limits[act_idx] = joint.joint().position_upper_limits()[0]
+        vel_limits[act_idx] = joint.joint().velocity_upper_limits()[0]
+
+    print(effort_limits)
+    print(vel_limits)
 
     # Create the mathematical program
     prog = MathematicalProgram()
@@ -99,16 +106,17 @@ def find_throwing_trajectory(N, q0_ball, v0_ball, initial_state, final_configura
     dt = tf/N
     for i in range(N-2):
         cost += (u[i].T @ u[i] + u[i+1].T @ u[i+1])
-    # prog.AddQuadraticCost(cost)
-    prog.AddQuadraticCost(tf[0])
+    prog.AddQuadraticCost(cost)
+    # prog.AddQuadraticCost(tf[0])
     # print("cost = ", cost)
 
-    # TODO: Add bounding box constraints on the inputs and qdot 
+    # TODO: Add bounding box constraints on the inputs and qdot
     v = np.append(x.flatten(), u.flatten())
-    x_limits = np.tile(np.append(joint_limits, vel_limits), N)
+    x_limits_lower = np.tile(np.append(angle_lower_limits, -vel_limits), N)
+    x_limits_upper = np.tile(np.append(angle_upper_limits, vel_limits), N)
     u_limits = np.tile(effort_limits, N)
-    ub = np.append(x_limits, u_limits)
-    lb = np.append(-x_limits, -u_limits)
+    ub = np.append(x_limits_upper, u_limits)
+    lb = np.append(x_limits_lower, -u_limits)
     prog.AddBoundingBoxConstraint(lb, ub, v)
     # print("v shape = ", v.shape)
     # print("ub shape = ", ub.shape)
@@ -119,7 +127,7 @@ def find_throwing_trajectory(N, q0_ball, v0_ball, initial_state, final_configura
     x_init_guess[0] = initial_state
     for i in range(N):
         x_init_guess[i][0] = i*np.pi/N
-    
+
     u_init_guess0 = np.zeros(n_u)
     u_init_guess0[0] = uniform(-effort_limits[0], effort_limits[0])
     u_init_guess0[1] = uniform(-effort_limits[1], effort_limits[1])
@@ -137,8 +145,12 @@ def find_throwing_trajectory(N, q0_ball, v0_ball, initial_state, final_configura
     #DO NOT MODIFY THE LINES BELOW
 
     # Set up solver
+    def update(x):
+        print(x)
+    # prog.AddVisualizationCallback(update, x.ravel())
     result = Solve(prog)
-    
+    print("Solver is ", result.get_solver_id().name())
+
     x_sol = result.GetSolution(x)
     u_sol = result.GetSolution(u)
     t_catch_sol = result.GetSolution(t_catch)
@@ -161,7 +173,7 @@ def find_throwing_trajectory(N, q0_ball, v0_ball, initial_state, final_configura
     u_traj = PiecewisePolynomial.ZeroOrderHold(timesteps, u_sol.T)
 
     return x_traj, u_traj, t_catch_sol, prog, prog.GetInitialGuess(x), prog.GetInitialGuess(u)
-    
+
 if __name__ == '__main__':
     N = 5
     initial_state = np.zeros(4)
