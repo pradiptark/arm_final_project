@@ -1,3 +1,6 @@
+import sys
+sys.path.append('../../arm_final_project')
+
 import matplotlib.pyplot as plt
 import numpy as np
 import importlib
@@ -8,7 +11,6 @@ from pydrake.all import (
     Parser, JointActuatorIndex, MathematicalProgram, Solve
 )
 from pydrake.multibody.plant import AddMultibodyPlantSceneGraph
-
 
 import kinematic_constraints
 import dynamics_constraints
@@ -21,6 +23,8 @@ from dynamics_constraints import (
 AddCollocationConstraints,
     EvaluateDynamics
 )
+
+from lib.IK_position_null import IK
 
 def find_throwing_trajectory(N, q0_ball, v0_ball, initial_state, final_configuration, distance):
     '''
@@ -43,6 +47,8 @@ def find_throwing_trajectory(N, q0_ball, v0_ball, initial_state, final_configura
 
     plant_context = plant.CreateDefaultContext()
     context = planar_arm.CreateDefaultContext()
+
+    ik = IK()
 
     # Dimensions specific to the planar_arm
     n_q = planar_arm.num_positions()
@@ -123,8 +129,21 @@ def find_throwing_trajectory(N, q0_ball, v0_ball, initial_state, final_configura
     # print("lb shape = ", lb.shape)
 
     # TODO: give the solver an initial guess for x and u using prog.SetInitialGuess(var, value)
-    x_init_guess = np.zeros((N, n_x))
-    x_init_guess[0] = initial_state
+    x_init_guess = np.zeros((N, n_x))    
+    
+    # Initial XYZ pos of the end effector
+    init_pos = np.array([[1, 0 , 0, 0.2],
+                        [0, -1, 0, 0],
+                        [0, 0, -1, 0.8],
+                        [0, 0, 0, 1]])
+    seed = np.array([ 0,    0,     0, -0.5, 0, 0, 0 ])
+    q,_,_,_ = ik.inverse(init_pos, seed, "J_pseudo", alpha=0.2)
+    vel = np.zeros(7)
+    x_init_guess[0] = np.append(q, vel)
+
+    # x_init_guess[0] = initial_state
+
+
     for i in range(N):
         x_init_guess[i][0] = i*np.pi/N
 
