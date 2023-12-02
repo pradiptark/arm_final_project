@@ -191,7 +191,7 @@ def find_throwing_trajectory(N, q0_ball, v0_ball, initial_state, final_configura
     x_traj = PiecewisePolynomial.CubicHermite(timesteps, x_sol.T, xdot_sol.T)
     u_traj = PiecewisePolynomial.ZeroOrderHold(timesteps, u_sol.T)
 
-    return x_traj, u_traj, t_catch_sol, prog, prog.GetInitialGuess(x), prog.GetInitialGuess(u)
+    return x_traj, u_traj, t_catch_sol[0], prog, prog.GetInitialGuess(x), prog.GetInitialGuess(u)
 
 if __name__ == '__main__':
     N = 5
