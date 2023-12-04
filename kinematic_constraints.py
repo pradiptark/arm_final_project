@@ -31,29 +31,52 @@ def AddFinalLandingPositionConstraint(prog, q0_ball, v0_ball, xf, d, t_catch, pl
         xf = vars[1:]
         # print('ee pos', EndEffectorFinalPos(plant_autodiff, context, xf))
         # print('ball pos', CalcCatchPos(q0_ball, v0_ball, tf))
-        return EndEffectorFinalPos(plant_autodiff, context, xf) - CalcCatchPos(q0_ball, v0_ball, tf)
+        return EndEffectorFinalPose(plant_autodiff, context, xf) - CalcCatchPose(q0_ball, v0_ball, tf)
 
-    def CalcCatchPos(q0, v0, t_catch):
+    def CalcCatchPose(q0, v0, t_catch):
         y_final = q0[1] + v0[1] * t_catch
         x_final = q0[0] + v0[0] * t_catch
         z_final = q0[2] + v0[2] * t_catch - 0.5 * g * t_catch**2
-        return np.array([x_final, y_final, z_final])    
+        pos_final = np.array([x_final, y_final, z_final])
 
-    # lb = np.zeros(3)
-    # ub = np.zeros(3)
+        vz_final = v0[2] - g * t_catch
+        vel_final = np.array([v0[0], v0[1], vz_final])
+        vel_final_unit = vel_final / np.linalg.norm(vel_final)
+
+        pos_vel_final = np.append(pos_final, vel_final_unit)
+
+        print("pos_vel_final = ", pos_vel_final)
+
+        # return pos_vel_final
+        return pos_final
+
+    # lb = np.zeros(6) # CalcCatchPos(q0_ball, v0_ball, t_catch)
+    # ub = np.zeros(6) # CalcCatchPos(q0_ball, v0_ball, t_catch)
 
     lb = np.zeros(3) # CalcCatchPos(q0_ball, v0_ball, t_catch)
     ub = np.zeros(3) # CalcCatchPos(q0_ball, v0_ball, t_catch)
 
+    # lb[3:] = np.array([-10,-10, -10])
+    # ub[3:] = np.array([10,10, 10])
+
     prog.AddConstraint(EndEffectorFinalPosHelper, lb, ub, [*t_catch, *xf])
 
 
-def EndEffectorFinalPos(plant, context, xf):
+def EndEffectorFinalPose(plant, context, xf):
     context.SetContinuousState(xf)
-    ee_frame = plant.GetBodyByName("panda_link8").body_frame()
+    ee_body = plant.GetBodyByName("panda_link8")
+    ee_frame = ee_body.body_frame()
     ee_point_tracked = np.zeros(3)
     ee_pos = plant.CalcPointsPositions(context, ee_frame, ee_point_tracked, plant.world_frame()).ravel()
 
+    # Get ee orientation
+    body_pose = plant.EvalBodyPoseInWorld(context, ee_body)
+    ee_rot = body_pose.GetAsMatrix4()[:-1, 3]
+    ee_pos_rot = np.append(ee_pos, ee_rot)
+
+    print("ee pos rot = ", ee_pos_rot)
+
+    # return ee_pos_rot
     return ee_pos
 
 
