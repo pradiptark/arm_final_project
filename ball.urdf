@@ -13,7 +13,7 @@
     <visual>
       <origin xyz="0 0 0"/>
       <geometry>
-        <sphere radius=".1"/>
+        <sphere radius=".03"/>
       </geometry>
       <material name="green"/>
     </visual>

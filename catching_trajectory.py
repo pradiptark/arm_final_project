@@ -39,7 +39,8 @@ def find_throwing_trajectory(N, q0_ball, v0_ball, initial_state, final_configura
     builder = DiagramBuilder()
     plant, scene_graph = AddMultibodyPlantSceneGraph(builder, 0.)
     parser = Parser(plant)
-    parser.AddModels(url="package://drake/manipulation/models/franka_description/urdf/panda_arm.urdf")
+    # parser.AddModels(url="package://drake/manipulation/models/franka_description/urdf/panda_arm.urdf")
+    parser.AddModels("./panda_arm_custom.urdf")
     plant.WeldFrames(plant.world_frame(), plant.GetFrameByName("panda_link0"))
 
     plant.Finalize()
