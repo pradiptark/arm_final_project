@@ -67,15 +67,17 @@ def AddFinalLandingPositionConstraint(prog, q0_ball, v0_ball, xf, d, t_catch, pl
 
 def EndEffectorFinalPose(plant, context, xf):
     context.SetContinuousState(xf)
-    net_frame = plant.GetBodyByName("panda_link9").body_frame()
+    ee_align = plant.GetBodyByName("panda_link7")
+    ee_body = plant.GetBodyByName("panda_link9")
+    ee_frame = ee_body.body_frame()
     ee_point_tracked = np.zeros(3)
     ee_pos = plant.CalcPointsPositions(context, net_frame, ee_point_tracked, plant.world_frame()).ravel()
 
     # Get ee orientation
-    ee_body = plant.GetBodyByName("panda_link7")
-    body_pose = plant.EvalBodyPoseInWorld(context, ee_body)
+    ee_align = plant.GetBodyByName("panda_link7")
+    body_pose = plant.EvalBodyPoseInWorld(context, ee_align)
     ee_rot = body_pose.GetAsMatrix4()[:-1, 2]
-    ee_pos_rot = np.append(ee_pos, -ee_rot)
+    ee_pos_rot = np.append(ee_pos, ee_rot)
 
     print("ee pos rot = ", ee_pos_rot)
 
