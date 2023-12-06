@@ -14,14 +14,19 @@ from pydrake.multibody.plant import AddMultibodyPlantSceneGraph
 
 import kinematic_constraints
 import dynamics_constraints
+import obstacle_constraints
 importlib.reload(kinematic_constraints)
 importlib.reload(dynamics_constraints)
+importlib.reload(obstacle_constraints)
 from kinematic_constraints import (
     AddFinalLandingPositionConstraint
 )
 from dynamics_constraints import (
 AddCollocationConstraints,
     EvaluateDynamics
+)
+from obstacle_constraints import (
+    AddObstacleConstraint
 )
 
 from lib.IK_position_null import IK
@@ -107,6 +112,10 @@ def find_throwing_trajectory(N, q0_ball, v0_ball, initial_state, final_configura
 
     # Add the collocation aka dynamics constraints
     AddCollocationConstraints(prog, planar_arm, context, N, x, u, tf)
+
+    # Add costraints for the distances between joint spheres and obstacles
+    obs = np.array([0.06, -1, 2, 0.8])
+    AddObstacleConstraint(prog, obs, xf, plant)
 
     # TODO: Add the cost function here
     cost = 0
