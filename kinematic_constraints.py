@@ -62,16 +62,16 @@ def AddFinalLandingPositionConstraint(prog, q0_ball, v0_ball, xf, d, t_catch, pl
 
     prog.AddConstraint(EndEffectorFinalPosHelper, lb, ub, [*t_catch, *xf])
 
-    z_final = CalcCatchPose(q0_ball, v0_ball, t_catch)[2]
+    z_final = CalcCatchPose(q0_ball, v0_ball, t_catch[0])[2]
     prog.AddConstraint(z_final, 0.2, np.inf)
 
 def EndEffectorFinalPose(plant, context, xf):
     context.SetContinuousState(xf)
-    ee_align = plant.GetBodyByName("panda_link7")
+    ee_align = plant.GetBodyByName("panda_link7").body_frame()
     ee_body = plant.GetBodyByName("panda_link9")
     ee_frame = ee_body.body_frame()
     ee_point_tracked = np.zeros(3)
-    ee_pos = plant.CalcPointsPositions(context, net_frame, ee_point_tracked, plant.world_frame()).ravel()
+    ee_pos = plant.CalcPointsPositions(context, ee_frame, ee_point_tracked, plant.world_frame()).ravel()
 
     # Get ee orientation
     ee_align = plant.GetBodyByName("panda_link7")
