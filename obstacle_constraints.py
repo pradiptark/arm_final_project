@@ -37,7 +37,7 @@ def AddObstacleConstraint(prog, obstacles, xf, plant):
         sphere_obs_diff = sphere_origin_world - obs_origin
 
         sphere_obs_dist = np.array([np.linalg.norm(s) for s in sphere_obs_diff])
-        sphere_obs_dist -= obs_radius.reshape((11,)) - sphere_radius
+        sphere_obs_dist += -obs_radius.reshape((11,)) - sphere_radius
 
         return sphere_obs_dist
 
@@ -50,7 +50,7 @@ def AddObstacleConstraint(prog, obstacles, xf, plant):
 def JointSpherePos(plant, context, xf, sphere_origin):
     context.SetContinuousState(xf)
 
-    sphere_origin_world = np.zeros((0, 3))
+    sphere_origin_world = np.empty((0, 3))
     
     for i, ori in enumerate(sphere_origin):
         link_name = "panda_link" + str(int(ori[0]))
