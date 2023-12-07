@@ -31,7 +31,7 @@ from obstacle_constraints import (
 
 from lib.IK_position_null import IK
 
-def find_throwing_trajectory(N, q0_ball, v0_ball, initial_state, final_configuration, distance):
+def find_throwing_trajectory(N, q0_ball, v0_ball, initial_state, final_configuration, distance, obstacle):
     '''
     Parameters:
         N - number of knot points
@@ -114,8 +114,7 @@ def find_throwing_trajectory(N, q0_ball, v0_ball, initial_state, final_configura
     AddCollocationConstraints(prog, planar_arm, context, N, x, u, tf)
 
     # Add costraints for the distances between joint spheres and obstacles
-    obs = np.array([0.06, -1, 2, 0.8])
-    AddObstacleConstraint(prog, obs, xf, plant)
+    AddObstacleConstraint(prog, obstacle, xf, plant)
 
     # TODO: Add the cost function here
     cost = 0

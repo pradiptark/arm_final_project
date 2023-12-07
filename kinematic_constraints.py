@@ -69,7 +69,7 @@ def EndEffectorFinalPose(plant, context, xf):
     context.SetContinuousState(xf)
     ee_align = plant.GetBodyByName("panda_link7")
     ee_body = plant.GetBodyByName("panda_link9")
-    ee_frame = ee_body.body_frame()
+    net_frame = ee_body.body_frame()
     ee_point_tracked = np.zeros(3)
     ee_pos = plant.CalcPointsPositions(context, net_frame, ee_point_tracked, plant.world_frame()).ravel()
 
