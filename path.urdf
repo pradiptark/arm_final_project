@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<robot name="Ball">
+  <material name="purple">
+    <color rgba=".6 .3 .6 1"/>
+  </material>
+  <link name="path_ball">
+    <inertial>
+      <origin xyz="0 0.0 0" rpy="0 0 0"/>
+      <mass value="0"/>
+      <!-- moment = 2/5 MR^2 (https://scienceworld.wolfram.com/physics/MomentofInertiaSphere.html) -->
+      <inertia ixx="0.004" ixy="0" ixz="0" iyy="0.004" iyz="0" izz="0.004"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0"/>
+      <geometry>
+        <sphere radius=".01"/>
+      </geometry>
+      <material name="purple"/>
+    </visual>
+  </link>
+</robot>

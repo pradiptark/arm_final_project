@@ -45,7 +45,7 @@ def AddFinalLandingPositionConstraint(prog, q0_ball, v0_ball, xf, d, t_catch, pl
 
         pos_vel_final = np.append(pos_final, vel_final_unit)
 
-        print("pos_vel_final = ", pos_vel_final)
+        # print("pos_vel_final = ", pos_vel_final)
 
         return pos_vel_final
         # return pos_final
@@ -63,13 +63,13 @@ def AddFinalLandingPositionConstraint(prog, q0_ball, v0_ball, xf, d, t_catch, pl
     prog.AddConstraint(EndEffectorFinalPosHelper, lb, ub, [*t_catch, *xf])
 
     z_final = CalcCatchPose(q0_ball, v0_ball, t_catch[0])[2]
-    prog.AddConstraint(z_final, 0.2, np.inf)
+    prog.AddConstraint(z_final, 0.1, np.inf)
 
 def EndEffectorFinalPose(plant, context, xf):
     context.SetContinuousState(xf)
     ee_align = plant.GetBodyByName("panda_link7").body_frame()
     ee_body = plant.GetBodyByName("panda_link9")
-    net_frame = ee_body.body_frame()
+    ee_frame = ee_body.body_frame()
     ee_point_tracked = np.zeros(3)
     ee_pos = plant.CalcPointsPositions(context, ee_frame, ee_point_tracked, plant.world_frame()).ravel()
 
@@ -78,8 +78,6 @@ def EndEffectorFinalPose(plant, context, xf):
     body_pose = plant.EvalBodyPoseInWorld(context, ee_align)
     ee_rot = body_pose.GetAsMatrix4()[:-1, 2]
     ee_pos_rot = np.append(ee_pos, ee_rot)
-
-    print("ee pos rot = ", ee_pos_rot)
 
     return ee_pos_rot
     # return ee_pos

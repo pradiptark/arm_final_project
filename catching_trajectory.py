@@ -114,7 +114,9 @@ def find_throwing_trajectory(N, q0_ball, v0_ball, initial_state, final_configura
     AddCollocationConstraints(prog, planar_arm, context, N, x, u, tf)
 
     # Add costraints for the distances between joint spheres and obstacles
-    AddObstacleConstraint(prog, obstacle, xf, plant)
+    for i in range (N):
+        AddObstacleConstraint(prog, obstacle, x[i], plant)
+    # AddObstacleConstraint(prog, obstacle, xf, plant)
 
     # TODO: Add the cost function here
     cost = 0
@@ -141,16 +143,17 @@ def find_throwing_trajectory(N, q0_ball, v0_ball, initial_state, final_configura
     x_init_guess = np.zeros((N, n_x))    
     
     # Initial XYZ pos of the end effector
-    init_pos = np.array([[1, 0 , 0, 0.2],
-                        [0, -1, 0, 0],
-                        [0, 0, -1, 0.8],
-                        [0, 0, 0, 1]])
-    seed = np.array([ 0,    0,     0, -0.5, 0, 0, 0 ])
-    q,_,_,_ = ik.inverse(init_pos, seed, "J_pseudo", alpha=0.2)
-    vel = np.zeros(7)
-    x_init_guess[0] = np.append(q, vel)
+    # init_pos = np.array([[1, 0 , 0, 0],
+    #                     [0, -1, 0, -0.02],
+    #                     [0, 0, -1, 0.6],
+    #                     [0, 0, 0, 1]])
+    # seed = np.array([ 0,    0,     0, -0.5, 0, 0, 0 ])
+    # q,_,_,_ = ik.inverse(init_pos, seed, "J_pseudo", alpha=0.2)
+    # q = np.array([-0.01779206, -0.76012354,  0.01978261, -2.34205014, 0.02984053, 1.54119353, 0])
+    # vel = np.zeros(7)
+    # x_init_guess[0] = np.append(q, vel)
 
-    # x_init_guess[0] = initial_state
+    x_init_guess[0] = initial_state
 
 
     for i in range(N):
