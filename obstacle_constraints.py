@@ -27,35 +27,33 @@ def AddObstacleConstraint(prog, obstacles, xf, plant):
     ])
 
     n_sphere = len(sphere_origin)
+    n_obs = len(obstacles)
 
     def JointSpherePosHelper(xf):
         sphere_origin_world = JointSpherePos(plant_autodiff, context, xf, sphere_origin)
 
-        sphere_obs_dist_inv = np.zeros((n_sphere, ))
+        # sphere_obs_dist_total = np.zeros((n_obs, n_sphere))
+        sphere_obs_dist_total = np.array([])
+
         if len(obstacles) > 0:
             for obs in obstacles:
-                obs_margin = 0.05
-                # obs_radius = np.tile(obs[0] + obs_margin, (n_sphere))
-                obs_radius = obs[0] + obs_margin
+
+                obs_margin = 0.1
+                obs_radius = np.tile(obs[0] + obs_margin, (n_sphere))
                 obs_origin = np.tile(obs[1:], (n_sphere, 1))
-                # strength = 0.1
 
                 sphere_obs_diff = sphere_origin_world - obs_origin
                 sphere_obs_dist = np.array([np.linalg.norm(s) for s in sphere_obs_diff]) - obs_radius - sphere_radius
-                # sphere_obs_dist = np.array([np.linalg.norm(s) for s in sphere_obs_diff]) - sphere_radius
-                sphere_obs_dist_inv = np.append(sphere_obs_dist_inv, sphere_obs_dist)
-                # inv_dist = np.array([1/d for d in sphere_obs_dist])
-                # inv_dist = np.array([(1/d - 1/obs_radius) for d in sphere_obs_dist])
-                # sphere_obs_dist_inv = sphere_obs_dist_inv + 0.5*inv_dist
+                sphere_obs_dist_total = np.append(sphere_obs_dist_total, sphere_obs_dist)
 
                 # print("sphere_obs_diff = \n", sphere_obs_diff.shape)
                 # print("sphere_obs_dist = ", sphere_obs_dist.shape)
                 # print("sphere_obs_dist_inv = ", sphere_obs_dist_inv.shape)
 
-        return sphere_obs_dist
+        return sphere_obs_dist_total.flatten()
 
-    lb = np.ones(n_sphere) * 0
-    ub = np.ones(n_sphere) * np.inf
+    lb = np.ones(n_sphere * n_obs) * 0
+    ub = np.ones(n_sphere * n_obs) * np.inf
 
     prog.AddConstraint(JointSpherePosHelper, lb, ub, xf)
 
